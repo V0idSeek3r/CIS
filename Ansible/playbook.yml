@@ -1,0 +1,77 @@
+---
+- name: Audit des file system actif ( CIS 1.1.1  )
+  hosts: all
+  become: true  
+
+  vars:
+    module_list:
+      - cramfs      # 1.1.1.1
+      - freevxfs    # 1.1.1.2
+      - hfs         # 1.1.1.3
+      - hfsplus     # 1.1.1.4
+      - jffs2       # 1.1.1.5
+      - overlayfs   # 1.1.1.6
+      - squashfs    # 1.1.1.7
+      - udf         # 1.1.1.8
+      - usb-storage # 1.1.1.9
+
+      # 1.1.1.10
+      #- afs CVE-2022-37402
+      #- ceph - CVE-2022-0670
+      #- cifs - CVE-2022-29869
+      #- exfat CVE-2022-29973
+      #- fat CVE-2022-22043
+      #- fscache CVE-2022-3630
+      #- fuse CVE-2023-0386
+      #- gfs2 CVE-2023-3212
+
+  tasks:
+    - name: Appliquer le rôle Filesystem_Kernel_Module pour chaque module
+      when: false
+      include_role:
+        name: Filesystem_Kernel_Modules
+      vars:
+        mod_name: "{{ item }}"
+      loop: "{{ module_list }}"
+
+
+# Facultatif ( 1.1.1.10 )
+
+#- name: Rapport final sur les modules filesystem
+#  hosts: all
+#  become: true
+#  tasks:
+#    - name: Inclure le rapport de modules inutilisés
+#      include_tasks: roles/Filesystem_Kernel_Module/tasks/rapport_summary.yml
+
+
+
+- name: Audit de plusieurs partitions
+  hosts: all
+  become: true
+  roles:
+    - role: Filesystem_Partitions
+      vars:
+        partition_config:
+          - path: /tmp
+            systemd_unit: tmp.mount
+            required_mount_options: ["noexec", "nosuid", "nodev"]
+          - path: /dev/shm
+            systemd_unit: none # Aucun systemd pour shm, on laisse a none
+            required_mount_options: ["noexec", "nosuid", "nodev"]
+          - path: /home
+            systemd_unit: home.mount
+            required_mount_options: ["nosuid", "nodev"]
+          - path: /var
+            systemd_unit: var.mount
+            required_mount_options: ["nosuid", "nodev"]
+          - path: /var/tmp
+            systemd_unit: var-tmp.mount
+            required_mount_options: ["noexec", "nosuid", "nodev"]
+          - path: /var/log
+            systemd_unit: var-log.mount
+            required_mount_options: ["noexec", "nosuid", "nodev"]
+          - path: /var/log/audit
+            systemd_unit: var-log-audit.mount
+            required_mount_options: ["noexec", "nosuid", "nodev"]
+

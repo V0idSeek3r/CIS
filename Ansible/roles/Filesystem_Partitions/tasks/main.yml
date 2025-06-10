@@ -1,0 +1,5 @@
+- name: Vérifier chaque partition définie
+  include_tasks: check_partition.yml
+  loop: "{{ partition_config }}"
+  loop_control:
+    loop_var: partition_item

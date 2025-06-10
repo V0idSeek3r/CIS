@@ -1,0 +1,6 @@
+- name: Lancer l'audit du module {{ mod_name }}
+  include_tasks: "{{ role_path }}/tasks/audit.yml"
+
+- name: Appliquer la remédiation si le module est actif ou mal configuré
+  include_tasks: "{{ role_path }}/tasks/fix.yml"
+  when: mod_audit_failed | default(false)

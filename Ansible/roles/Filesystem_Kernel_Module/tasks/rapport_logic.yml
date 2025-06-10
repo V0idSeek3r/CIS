@@ -1,0 +1,97 @@
+- name: Charger les modules filesystem disponibles
+  shell: |
+    find "$(readlink -f /lib/modules/$(uname -r)/kernel/fs)" -mindepth 1 -maxdepth 1 -type d ! -empty -exec basename {} \;
+  register: available_modules_raw
+  changed_when: false
+
+- name: Définir la liste des modules disponibles
+  set_fact:
+    available_modules: "{{ available_modules_raw.stdout_lines }}"
+
+- name: Définir les modules ignorés et ceux avec CVE
+  set_fact:
+    ignore_modules: ["xfs", "vfat", "ext2", "ext3", "ext4"]
+    cve_modules: ["afs", "ceph", "cifs", "exfat", "fat", "fscache", "fuse", "gfs2"]
+
+- name: Obtenir les points de montage actifs
+  shell: findmnt -knD | awk '{print $2}' | sort -u
+  register: mounted_paths
+  changed_when: false
+
+- name: Extraire les modules montés qui correspondent à ceux disponibles
+  set_fact:
+    mounted_modules: "{{ mounted_paths.stdout_lines | map('basename') | list }}"
+
+- name: Lire les directives modprobe install/blacklist
+  shell: modprobe --showconfig | grep -P '^\s*(blacklist|install)'
+  register: modprobe_config
+  changed_when: false
+
+- name: Initialiser les listes de sortie
+  set_fact:
+    not_fully_disabled: []
+    skipped_modules: []
+    warnings: []
+
+- name: Vérifier chaque module disponible
+  vars:
+    l_mod_name: "{{ item }}"
+    clean_mod_name: "{{ (item[:-2] if item.endswith('ly') else item) }}"
+  loop: "{{ available_modules }}"
+  when: item not in ignore_modules
+  block:
+    - name: Vérifier si le module est dans la liste des CVEs et actif
+      when: item in mounted_modules and item in cve_modules
+      set_fact:
+        warnings: "{{ warnings + [\" - ** WARNING: kernel module: '\" ~ item ~ \"' has a CVE and is currently mounted! **\"] }}"
+
+    - name: Vérifier si le module est monté (et autorisé)
+      when: item in mounted_modules and item not in cve_modules
+      set_fact:
+        skipped_modules: "{{ skipped_modules + [\" - Kernel module: '\" ~ item ~ \"' is currently mounted - do NOT unload or disable\"] }}"
+
+    - name: Vérifier les règles de désactivation du module
+      when: item not in mounted_modules
+      block:
+        - name: Vérifie s'il manque un 'blacklist'
+          set_fact:
+            not_fully_disabled: "{{ not_fully_disabled + [\" - Kernel module: '\" ~ item ~ \"' is not fully disabled\"] }}"
+          when: modprobe_config.stdout is not search('\bblacklist\s+' + item + '\b')
+
+        - name: Vérifie s'il manque un 'install /bin/false'
+          set_fact:
+            not_fully_disabled: "{{ not_fully_disabled + [\" - Kernel module: '\" ~ item ~ \"' is not fully disabled\"] }}"
+          when: modprobe_config.stdout is not search('\binstall\s+' + item + '\s+(/usr)?/bin/(false|true)\b')
+
+        - name: Vérifie si le module est chargé
+          shell: lsmod | grep -w {{ item }}
+          register: mod_loaded_check
+          ignore_errors: true
+          changed_when: false
+
+        - name: Ajouter note si le module est chargé
+          set_fact:
+            not_fully_disabled: "{{ not_fully_disabled + [\" - Kernel module: '\" ~ item ~ \"' is loaded"] }}"
+          when: mod_loaded_check.rc == 0
+
+- name: Afficher les modules ignorés
+  when: skipped_modules | length > 0
+  debug:
+    msg:
+      - " -- INFO --"
+      - "The following were intentionally skipped:"
+      - "{{ skipped_modules }}"
+
+- name: Afficher le résultat final
+  debug:
+    msg: >-
+      {% if not_fully_disabled | length == 0 %}
+        ✅ Aucun module noyau inutilisé n'est activé.
+        {{ warnings }}
+        {{ skipped_modules }}
+      {% else %}
+        ❌ Modules non complètement désactivés :
+        {{ not_fully_disabled }}
+        {{ warnings }}
+        {{ skipped_modules }}
+      {% endif %}

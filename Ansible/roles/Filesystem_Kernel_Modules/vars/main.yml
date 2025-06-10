@@ -1,0 +1,2 @@
+mod_type: fs
+mod_conf_file: "/etc/modprobe.d/{{ mod_name }}.conf"
