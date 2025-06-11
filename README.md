@@ -33,14 +33,14 @@ Ansible/
 ---
 ## 🚀 Fonctionnalités
 
-### 🔍 Audit des modules noyau (`Filesystem_Kernel_Modules`)
+### 🔍 Audit des modules noyau (`Filesystem_Kernel_Modules`) CIS 1.1.1 Configure Filesystem Kernel Modules
 - Vérifie si des modules vulnérables ou inutiles sont :
   - chargés (`lsmod`)
   - blacklistés (`modprobe`)
   - désactivés via `install /bin/false`
 - Génère un rapport d’audit et applique les remédiations nécessaires (déchargement, blacklist, verrouillage via modprobe).
 
-### 🧱 Vérification des partitions (`Filesystem_Partitions`)
+### 🧱 Vérification des partitions (`Filesystem_Partitions`) CIS 1.1.2 Configure Filesystem Partitions
 - Vérifie que les partitions sensibles comme `/tmp`, `/dev/shm`, `/home`, etc. sont montées avec les options `nodev`, `nosuid`, `noexec` selon la configuration CIS.
 - Signale les manques via une logique conditionnelle basée sur `/etc/fstab`.
 
