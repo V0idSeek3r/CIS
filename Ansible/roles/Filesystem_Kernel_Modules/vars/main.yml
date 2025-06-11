@@ -5,8 +5,8 @@
 # Active ou non l'audit des modules du noyau
 Filesystem_Kernel_Modules_On: true
 
-# Active ou non l'audit des partitions montées
-Filesystem_Partitions_On: false
+# Active ou non le fix des automatique des modules
+Filesystem_Fix_On: false
 
 # ------------------------------------------------------------------------------
 # 📦 Liste des modules à auditer (issus de la section CIS 1.1.1)
@@ -15,23 +15,23 @@ Filesystem_Partitions_On: false
 Filesystem_List:
   - cramfs      # CIS 1.1.1.1
   - freevxfs    # CIS 1.1.1.2
-  - hfs         # CIS 1.1.1.3
-  - hfsplus     # CIS 1.1.1.4
-  - jffs2       # CIS 1.1.1.5
-  - overlayfs   # CIS 1.1.1.6
-  - squashfs    # CIS 1.1.1.7
-  - udf         # CIS 1.1.1.8
+  #- hfs         # CIS 1.1.1.3
+  #- hfsplus     # CIS 1.1.1.4
+  #- jffs2       # CIS 1.1.1.5
+  #- overlayfs   # CIS 1.1.1.6
+  #- squashfs    # CIS 1.1.1.7
+  #- udf         # CIS 1.1.1.8
   - usb-storage # CIS 1.1.1.9
 
   # Modules facultatifs (CIS 1.1.1.10 ou modules sensibles)
-  # - afs        # CVE-2022-37402
-  # - ceph       # CVE-2022-0670
-  # - cifs       # CVE-2022-29869
-  # - exfat      # CVE-2022-29973
-  # - fat        # CVE-2022-22043
-  # - fscache    # CVE-2022-3630
-  # - fuse       # CVE-2023-0386
-  # - gfs2       # CVE-2023-3212
+  #- afs        # CVE-2022-37402
+  #- ceph       # CVE-2022-0670
+  #- cifs       # CVE-2022-29869
+  #- exfat      # CVE-2022-29973
+  #- fat        # CVE-2022-22043
+  #- fscache    # CVE-2022-3630
+  #- fuse       # CVE-2023-0386
+  #- gfs2       # CVE-2023-3212
 
 
 # ------------------------------------------------------------------------------

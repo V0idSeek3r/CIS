@@ -3,3 +3,7 @@
   loop: "{{ partition_config }}"
   loop_control:
     loop_var: partition_item
+
+- name: Résumé de l’audit
+  debug:
+    var: audit_messages

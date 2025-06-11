@@ -16,13 +16,13 @@
   failed_when: false
   when: partition_check.rc == 0
 
-- name: Avertir si l’unité est masked ou disabled
-  debug:
-    msg: "❌ L’unité {{ partition_item.systemd_unit }} est {{ systemd_unit_status.stdout }}"
-  when:
-    - partition_check.rc == 0
-    - systemd_unit_status.stdout in ["disabled", "masked"]
-    - partition_item.systemd_unit != 'none'
+#- name: Avertir si l’unité est masked ou disabled
+#  debug:
+#    msg: "❌ L’unité {{ partition_item.systemd_unit }} est {{ systemd_unit_status.stdout }}"
+#  when:
+#    - partition_check.rc == 0
+#    - systemd_unit_status.stdout in ["disabled", "masked"]
+#    - partition_item.systemd_unit != 'none'
 
 - name: Lire les options de montage depuis fstab
   shell: grep -P '^\s*[^#]\S+\s+{{ partition_item.path }}\s+\S+\s+\S+' /etc/fstab | awk '{print $4}'
@@ -36,19 +36,27 @@
     fstab_valid_flags: "{{ partition_item.required_mount_options | difference((fstab_mount_opts.stdout | default('')).split(',')) | length == 0 }}"
   when: fstab_mount_opts.stdout is defined
 
-- name: Avertir si des options sont manquantes
-  debug:
-    msg: >-
-      ❌ Options absentes dans /etc/fstab pour {{ partition_item.path }} :
-      {{ partition_item.required_mount_options | difference((fstab_mount_opts.stdout | default('')).split(',')) }}
-  when:
-    - fstab_valid_flags is defined
-    - not fstab_valid_flags
+#- name: Avertir si des options sont manquantes
+#  debug:
+#    msg: >-
+#      ❌ Options absentes dans /etc/fstab pour {{ partition_item.path }} :
+#      {{ partition_item.required_mount_options | difference((fstab_mount_opts.stdout | default('')).split(',')) }}
+#  when:
+#    - fstab_valid_flags is defined
+#    - not fstab_valid_flags
 
-- name: Confirmer que la partition est conforme
-  debug:
-    msg: "✅ La partition {{ partition_item.path }} est conforme : montée, activée et options valides."
-  when:
-    - partition_check.rc == 0
-    - systemd_unit_status.stdout not in ["disabled", "masked"]
-    - fstab_valid_flags | default(false)
+#- name: Confirmer que la partition est conforme
+#  debug:
+#    msg: "✅ La partition {{ partition_item.path }} est conforme : montée, activée et options valides."
+#  when:
+#    - partition_check.rc == 0
+#    - systemd_unit_status.stdout not in ["disabled", "masked"]
+#    - fstab_valid_flags | default(false)
+
+- name: Déterminer si une remédiation est nécessaire
+  set_fact:
+    audit_messages: "{{ audit_messages + [ (
+      '✅ La partition ' ~ partition_item.path ~ ' est conforme : montée, activée et options valides.'
+      if (partition_check.rc == 0 and systemd_unit_status.stdout not in [\"disabled\", \"masked\"] and fstab_valid_flags | default(false))
+      else '❌ Options absentes dans /etc/fstab pour ' ~ partition_item.path ~ ''
+    ) ] }}"

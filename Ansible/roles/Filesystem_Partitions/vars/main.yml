@@ -1,7 +1,24 @@
-#partition_config:
-#  - path: /tmp
-#    systemd_unit: tmp.mount
-#    required_mount_options: ["rw", "nosuid", "nodev"]
-#  - path: /home
-#    systemd_unit: home.mount
-#    required_mount_options: ["rw", "nodev"]
+partition_config:
+  - path: /tmp # 1.1.2.1
+    systemd_unit: tmp.mount
+    required_mount_options: ["noexec", "nosuid", "nodev"]
+  - path: /dev/shm # 1.1.2.2
+    systemd_unit: none # Aucun systemd pour shm, on laisse a none
+    required_mount_options: ["noexec", "nosuid", "nodev"]
+  - path: /home # 1.1.2.3
+    systemd_unit: home.mount
+    required_mount_options: ["nosuid", "nodev"]
+  - path: /var # 1.1.2.4
+    systemd_unit: var.mount
+    required_mount_options: ["nosuid", "nodev"]
+  - path: /var/tmp # 1.1.2.5
+    systemd_unit: var-tmp.mount
+    required_mount_options: ["noexec", "nosuid", "nodev"]
+  - path: /var/log # 1.1.2.6
+    systemd_unit: var-log.mount
+    required_mount_options: ["noexec", "nosuid", "nodev"]
+  - path: /var/log/audit # 1.1.2.7
+    systemd_unit: var-log-audit.mount
+    required_mount_options: ["noexec", "nosuid", "nodev"]
+
+audit_messages: []

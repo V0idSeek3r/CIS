@@ -1,10 +1,13 @@
 ---
-- name: Audit des file system actif ( CIS 1.1.1  )
+- name: CIS Check
   hosts: all
   become: true
 
   tasks:
-    - name: Appliquer le rôle Filesystem_Kernel_Module pour chaque module
-      #when: Filesystem_Kernel_Modules_On
+    - name: Appliquer le rôle Filesystem_Kernel_Module pour chaque module ( CIS 1.1.1 Configure Filesystem Kernel Modules )
       include_role:
         name: Filesystem_Kernel_Modules
+
+    - name: Appliquer le rôle Filesystem_Kernel_Module pour chaque module ( CIS 1.1.2 Configure Filesystem Partitions  )
+      include_role:
+        name: Filesystem_Partitions
