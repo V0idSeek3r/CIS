@@ -16,19 +16,13 @@
   failed_when: false
   changed_when: false
 
-- name: Définir un fait si l’audit échoue
-  set_fact:
-    mod_audit_failed: true
-  when: >
-    mod_loaded.rc == 0
-    or install_check.rc != 0
-    or blacklist_check.rc != 0
 
-- name: Afficher le résultat de l’audit
-  debug:
-    msg: >-
-      {% if not mod_audit_failed | default(false) %}
-        ✅ Le module {{ mod_name }} est conforme : non chargé, non chargeable et blacklisté.
-      {% else %}
-        ❌ Le module {{ mod_name }} est chargé ou mal configuré.
-      {% endif %}
+- name: Déterminer si une remédiation est nécessaire
+  set_fact:
+    audit_messages: "{{ audit_messages + [ (
+      '✅ Le module ' ~ mod_name ~ ' est conforme : non chargé, non chargeable et blacklisté.'
+      if (mod_loaded.rc != 0 and install_check.rc == 0 and blacklist_check.rc == 0)
+      else '❌ Le module ' ~ mod_name ~ ' est chargé ou mal configuré.'
+    ) ] }}"
+    audit_fix_modules: >-
+      {{ audit_fix_modules + ([ mod_name ] if (mod_loaded.rc == 0 or install_check.rc != 0 or blacklist_check.rc != 0) else []) }}
