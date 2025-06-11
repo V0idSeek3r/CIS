@@ -10,58 +10,119 @@ Automatiser, valider et sécuriser la configuration d’un système en s’appuy
 
 ---
 
-## 📦 Fonctionnalités
-
-- ✅ **Audit par rôle** : chaque contrôle CIS est représenté par un rôle Ansible réutilisable.
-- 🔁 **Remédiation conditionnelle** : certaines tâches appliquent automatiquement les correctifs si l’audit échoue.
-- 📊 **Rapports clairs** : utilisation de `debug:` pour afficher l’état de conformité par tâche.
-- ⚙️ **Support multi-partitions** : audit des partitions `/tmp`, `/var`, `/home`, etc., avec validation des options `fstab`.
-- 📎 **Systemd-aware** : vérifie l’état des unités `*.mount` pour les partitions critiques.
-- 🧩 **Personnalisable** : chaque rôle accepte des variables comme `required_mount_options`, `partition_path`, `systemd_unit`, etc.
-
----
-
 ## 📁 Structure du projet
-
+```
+Ansible/
+├── playbook.yml
+└── roles/
+    ├── Filesystem_Kernel_Modules/
+    │   ├── tasks/
+    │   │   ├── audit.yml
+    │   │   ├── fix.yml
+    │   │   └── main.yml
+    │   └── vars/
+    │       └── main.yml
+    └── Filesystem_Partitions/
+        ├── tasks/
+        │   ├── check_partition.yml
+        │   └── main.yml
+        └── vars/
+            └── main.yml
+```
 
 ---
+## 🚀 Fonctionnalités
 
-## 🚀 Exemples d’utilisation
+### 🔍 Audit des modules noyau (`Filesystem_Kernel_Modules`)
+- Vérifie si des modules vulnérables ou inutiles sont :
+  - chargés (`lsmod`)
+  - blacklistés (`modprobe`)
+  - désactivés via `install /bin/false`
+- Génère un rapport d’audit et applique les remédiations nécessaires (déchargement, blacklist, verrouillage via modprobe).
 
-roles/
-  ├── Filesystem_Kernel_Modules/ # Audit/remédiation de modules noyau (ex: cramfs, freevxfs)
-  ├── Filesystem_Partitions/ # Audit des partitions, montages et options fstab
+### 🧱 Vérification des partitions (`Filesystem_Partitions`)
+- Vérifie que les partitions sensibles comme `/tmp`, `/dev/shm`, `/home`, etc. sont montées avec les options `nodev`, `nosuid`, `noexec` selon la configuration CIS.
+- Signale les manques via une logique conditionnelle basée sur `/etc/fstab`.
 
-### 🔍 Audit de partitions système
+## ⚙️ Prérequis
+
+- Ansible 2.10+
+- Système Linux supportant `lsmod`, `modprobe`, `grep`, `systemctl`
+- Accès `root` (ou `become: true`) pour les remédiations
+
+## 📦 Installation
+
+Clonez ce dépôt :
+
+```bash
+git clone https://github.com/votre-utilisateur/ansible-filesystem-hardening.git
+cd ansible-filesystem-hardening
+```
+
+## 🛠️ Utilisation
+
+Exécutez le playbook principal :
+
+```bash
+ansible-playbook -i inventory.yml Ansible/playbook.yml
+```
+
+Vous pouvez aussi surcharger certaines variables :
+
+```bash
+ansible-playbook Ansible/playbook.yml -e "Filesystem_Kernel_Modules_On=true Filesystem_Partitions_On=false"
+```
+
+## 🔧 Variables personnalisables
+
+Ces variables sont définies dans `vars/main.yml` pour chaque rôle.
+
+### `Filesystem_List`
+
+Liste des modules à auditer :
 
 ```yaml
-- name: Audit de plusieurs partitions
-  hosts: all
-  become: true
-  roles:
-    - role: Filesystem_Partitions
-      vars:
-        partition_config:
-          - path: /tmp # 1.1.2.1
-            systemd_unit: tmp.mount
-            required_mount_options: ["noexec", "nosuid", "nodev"]
-          - path: /dev/shm # 1.1.2.2
-            systemd_unit: none # Aucun systemd pour shm, on laisse a none
-            required_mount_options: ["noexec", "nosuid", "nodev"]
-          - path: /home # 1.1.2.3
-            systemd_unit: home.mount
-            required_mount_options: ["nosuid", "nodev"]
-          - path: /var # 1.1.2.4
-            systemd_unit: var.mount
-            required_mount_options: ["nosuid", "nodev"]
-          - path: /var/tmp # 1.1.2.5
-            systemd_unit: var-tmp.mount
-            required_mount_options: ["noexec", "nosuid", "nodev"]
-          - path: /var/log # 1.1.2.6
-            systemd_unit: var-log.mount
-            required_mount_options: ["noexec", "nosuid", "nodev"]
-          - path: /var/log/audit # 1.1.2.7
-            systemd_unit: var-log-audit.mount
-            required_mount_options: ["noexec", "nosuid", "nodev"]
+Filesystem_List:
+  - cramfs
+  - udf
+  - usb-storage
+```
 
+### `partition_config`
 
+Liste des points de montage à valider et leurs options requises :
+
+```yaml
+partition_config:
+  - path: /tmp
+    required_mount_options: ["noexec", "nosuid", "nodev"]
+```
+
+## 📄 Sortie attendue
+
+Exemples de résumé :
+
+```
+=== 🔍 Audit Modules ===
+✅ Le module cramfs est conforme : non chargé, non chargeable et blacklisté.
+❌ Le module udf est chargé ou mal configuré.
+
+=== 🛠️ Remédiations ===
+🛡️ Le module udf a été déchargé, rendu non chargeable et blacklisté.
+```
+
+## 📝 Licence
+
+Ce projet est distribué sous licence MIT (ou à préciser selon ton choix).
+
+## 🤝 Contributions
+
+Les PRs et suggestions sont les bienvenues ! Pour contribuer :
+1. Forkez le dépôt
+2. Créez une branche `feature/xxx`
+3. Envoyez une Pull Request
+
+## 👤 Auteur
+
+Développé par mra7
+📧 :o
