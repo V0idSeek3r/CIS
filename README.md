@@ -113,7 +113,7 @@ Exemples de résumé :
 
 ## 📝 Licence
 
-Ce projet est distribué sous licence MIT (ou à préciser selon ton choix).
+Ce projet est distribué sous licence MIT.
 
 ## 🤝 Contributions
 
